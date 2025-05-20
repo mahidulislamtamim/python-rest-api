@@ -31,13 +31,13 @@ userFields = {
 
 class Users(Resource):
     @marshal_with(userFields)
-    #Get all users
+    # Get all users
     def get(self):
         users = UserModel.query.all()
         return users
     
 
-    #Add user
+    # Add user
     @marshal_with(userFields)
     def post(self):
         args = user_arg.parse_args()
@@ -66,7 +66,7 @@ class Users(Resource):
     
 
 class User(Resource):
-    #Get user by id
+    # Get user by id
     @marshal_with(userFields)
     def get(self, id):
         # Get existing user
