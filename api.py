@@ -1,3 +1,4 @@
+# Import dependency
 from flask import Flask, abort, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
@@ -30,18 +31,21 @@ userFields = {
 
 class Users(Resource):
     @marshal_with(userFields)
+    #Get all users
     def get(self):
         users = UserModel.query.all()
         return users
     
+
+    #Add user
     @marshal_with(userFields)
     def post(self):
         args = user_arg.parse_args()
 
         name = args.get("name")
         email = args.get("email")
-        print(f"Name: {name}, Email: {email}")
 
+        # Check existing user
         ex_user = UserModel.query.filter(
             or_(
                 UserModel.name == name,
@@ -51,58 +55,86 @@ class Users(Resource):
         if ex_user:
             abort(404, description="User alrady exist")
 
+        # Add user to database
         user = UserModel(name=args["name"],email=args["email"])
         db.session.add(user)
         db.session.commit()
+
+        # Get all user and return
         users = UserModel.query.all()
         return users, 201
     
 
 class User(Resource):
+    #Get user by id
     @marshal_with(userFields)
     def get(self, id):
+        # Get existing user
         user = UserModel.query.filter_by(id=id).first()
+
+        # if not found, return not found message
         if not user:
             abort(404, description="User not found")
+        # return user data
         return user
     
     
+    # Update user
     @marshal_with(userFields)
     def patch(self, id):
         args = user_arg.parse_args()
+
+        # Get existing user
         user = UserModel.query.filter_by(id=id).first()
+
+        # if not found, return not found message
         if not user:
             abort(404, description="User not found")
+        
+        # Set user date
         user.name = args["name"]
         user.email = args["email"]
         db.session.commit()
+
+        # return user data
         return user
     
 
+    # Delete user by id
     @marshal_with(userFields)
     def delete(self, id):
+        # Get existing user
         user = UserModel.query.filter_by(id=id).first()
+
+        # if not found, return not found message
         if not user:
             abort(404, description="User not found")
+        
+        # Delete user
         db.session.delete(user)
         db.session.commit()
 
+        # Get all user and return
         users = UserModel.query.all()
         return users
     
 
-
-
+# Add route
 api.add_resource(Users, "/api/users/")
 api.add_resource(User, "/api/users/<int:id>")
 
+
+# Error handler
 @app.errorhandler(404)
 def handle_404(e):
     return jsonify(error=str(e)), 404
 
+
+# Add route
 @app.route("/")
 def home():
     return "<h1>Flask REST API</h1>"
+
 
 if __name__ == "__main__":
     app.run(debug=True)
